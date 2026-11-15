@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>تطبيقاتي - NOVA</title>
+<style>body{background:#000;color:#fff;font-family:sans-serif;padding:15px;margin:0}h1{color:#a855f7}.card{background:#111;border:1px solid #333;border-radius:16px;padding:15px;margin:12px 0}.btn{padding:10px 15px;border:none;border-radius:10px;margin:5px 0;font-size:14px}.open{background:#a855f7;color:#fff}.del{background:#333;color:#fff}a{color:#fff}</style>
+</head>
+<body>
+<h1>👑 تطبيقاتي</h1><a href="builder.html">← ارجع للباني</a><div id="list"></div>
+<script>
+if(localStorage.getItem("nova_login")!=="yes"){window.location.href="index.html";}
+let apps=JSON.parse(localStorage.getItem("nova_apps")||"[]");
+let list=document.getElementById("list");
+if(apps.length===0){list.innerHTML="<p style='color:#888'>لسه مبنيتش حاجة.. ارجع للباني وابني أول تطبيق</p>";}
+apps.forEach((app,i)=>{
+let div=document.createElement("div");div.className="card";
+div.innerHTML=`<h3>${app.name}</h3><p style="color:#888;font-size:12px">${app.date}</p><button class="btn open" onclick="openApp(${i})">▶ فتح</button> <button class="btn del" onclick="delApp(${i})">🗑 مسح</button><div id="view${i}" style="margin-top:10px"></div>`;
+list.appendChild(div);
+});
+function openApp(i){let box=document.getElementById("view"+i);box.innerHTML=`<iframe style="width:100%;height:400px;border:none;background:#fff;border-radius:10px" id="f${i}"></iframe>`;let f=document.getElementById("f"+i);let d=f.contentDocument||f.contentWindow.document;d.open();d.write(apps[i].code);d.close();}
+function delApp(i){apps.splice(i,1);localStorage.setItem("nova_apps",JSON.stringify(apps));location.reload();}
+</script>
+</body></html>
