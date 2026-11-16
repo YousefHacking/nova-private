@@ -28,10 +28,11 @@ iframe{width:100%;height:420px;border:none;background:#fff}.tag{display:inline-b
 </div>
 <p style="color:#aaa;font-size:13px">ابني تطبيق أو لعبة 2D / 3D قوية - خاص بيك</p>
 <div class="card">
-<label>🔑 مفتاح Gemini المجاني - من aistudio.google.com</label>
-<input type="password" id="apiKey" placeholder="الصقه هنا، هيتحفظ عندك بس">
+<label>🔑 مفتاح Gemini المجاني - لازم يتحط هنا عشان يبني أي فكرة</label>
+<input type="password" id="apiKey" placeholder="الصق المفتاح هنا - بيبدأ بـ AIzaSy">
+<p id="keyStatus" style="font-size:12px;color:#facc15;margin:0"></p>
 <label>💡 عايز تبني إيه؟</label>
-<textarea id="idea" rows="3" placeholder="مثال: لعبة 3D كرة NOVA بتجري وتجمع نجوم ذهبية"></textarea>
+<textarea id="idea" rows="3" placeholder="مثال: تطبيق بيحسب عدد دقات القلب عن طريق البصمة"></textarea>
 <label>نوع البناء:</label>
 <div class="btns">
 <button class="btn b2" id="b2d" onclick="setType('2D')">🎮 2D</button>
@@ -53,22 +54,38 @@ iframe{width:100%;height:420px;border:none;background:#fff}.tag{display:inline-b
 if(localStorage.getItem("nova_login")!=="yes"){window.location.href="index.html";}
 let TYPE="3D",lastCode="";
 function setType(t){TYPE=t;document.getElementById("b2d").classList.toggle("active",t==="2D");document.getElementById("b3d").classList.toggle("active",t==="3D");}
-if(localStorage.getItem("nova_gemini"))document.getElementById("apiKey").value=localStorage.getItem("nova_gemini");
+let savedKey=localStorage.getItem("nova_gemini")||"";
+if(savedKey){document.getElementById("apiKey").value=savedKey;document.getElementById("keyStatus").innerText="✅ المفتاح محفوظ - جاهز يبني أي فكرة";}else{document.getElementById("keyStatus").innerText="⚠️ المفتاح مش محطوط - الصقه فوق عشان يبني أي فكرة";}
 async function buildApp(){
 let idea=document.getElementById("idea").value.trim(),name=document.getElementById("appName").value||"NOVA APP",style=document.getElementById("style").value,key=document.getElementById("apiKey").value.trim();
 if(!idea){alert("اكتب فكرة الأول");return;}
-if(key)localStorage.setItem("nova_gemini",key);
-document.getElementById("status").innerText="⏳ بيبني... استنى ثواني";
-let prompt=`ابني تطبيق واحد كامل في ملف HTML واحد. اسم التطبيق: ${name}. الفكرة: ${idea}. النوع: ${TYPE}. الستايل: ${style}. شروط مهمة جدا: ملف HTML واحد فقط، عربي RTL، يشتغل على الموبايل، أزرار كبيرة. مهم: أزرار التحكم لازم تكون داخل div فيه dir="ltr" عشان متتقلبش، وزرار اليمين ▶ لازم يحرك يمين، وزرار الشمال ◀ لازم يحرك شمال، متعكسهومش. لو 3D: استخدم Three.js من CDN، إضاءة + ظلال، أرضية، كاميرا، أزرار موبايل يمين/شمال/نط، عداد نقاط، Game Over، حفظ أعلى سكور في localStorage. لو 2D: لعبة كاملة ب Canvas، أزرار موبايل، نقاط، Game Over. رجع الكود فقط.`;
+if(!key){alert("⚠️ حط مفتاح Gemini الأول فوق، عشان يبني فكرتك. من غيره هيبني لعبة الكرة الجاهزة بس.");document.getElementById("status").innerText="⚠️ حط المفتاح الأول";return;}
+localStorage.setItem("nova_gemini",key);
+document.getElementById("keyStatus").innerText="✅ المفتاح محفوظ";
+document.getElementById("status").innerText="⏳ بيبني بالـ AI... استنى 10 ثواني";
+let prompt=`ابني تطبيق واحد كامل في ملف HTML واحد. اسم التطبيق: ${name}. الفكرة: ${idea}. النوع: ${TYPE}. الستايل: ${style}. شروط مهمة جدا: ملف HTML واحد فقط، عربي RTL، يشتغل على الموبايل، أزرار كبيرة. مهم: أزرار التحكم لازم تكون داخل div فيه dir="ltr" عشان متتقلبش، وزرار اليمين ▶ لازم يحرك يمين، وزرار الشمال ◀ لازم يحرك شمال، متعكسهومش. لو طلب تطبيق مش لعبة، ابن التطبيق كامل بوظائفه، مش لعبة. لو 3D: استخدم Three.js من CDN، إضاءة + ظلال، أرضية، كاميرا، أزرار موبايل يمين/شمال/نط، عداد نقاط، Game Over، حفظ أعلى سكور في localStorage. لو 2D: لعبة أو تطبيق كامل ب Canvas أو HTML، أزرار موبايل، نقاط، Game Over. رجع الكود فقط، من غير شرح.`;
 try{
-if(!key)throw new Error("no-key");
-let res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
-let data=await res.json();let txt=data.candidates[0].content.parts[0].text;txt=txt.replace(/```html/g,"").replace(/```/g,"").trim();showApp(txt);
-}catch(e){showApp(getFallback(name,idea));document.getElementById("status").innerText="⚠️ اتبنت بالقالب الجاهز - حط مفتاح Gemini عشان يبني أي فكرة";return;}
-document.getElementById("status").innerText="✅ اتبنت! جربها واحفظها";
+let models=["gemini-2.0-flash","gemini-1.5-flash","gemini-2.5-flash"];
+let txt="";
+let ok=false;
+for(let m of models){
+try{
+let res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${key}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
+let data=await res.json();
+if(data.candidates && data.candidates[0]){txt=data.candidates[0].content.parts[0].text;ok=true;break;}
+}catch(e){}
+}
+if(!ok) throw new Error("API failed");
+txt=txt.replace(/```html/g,"").replace(/```/g,"").trim();
+showApp(txt);
+document.getElementById("status").innerText="✅ اتبنت بالـ AI!";
+}catch(e){
+document.getElementById("status").innerText="❌ الـ AI مردش - المفتاح غلط أو النت ضعيف. اتأكد من المفتاح وحاول تاني. مش هبني لعبة الكرة عشان متتلخبطش.";
+alert("المفتاح غلط أو النت ضعيف. اتأكد إنك نسخت المفتاح كله من aistudio.google.com/apikey");
+return;
+}
 }
 function showApp(code){lastCode=code;let box=document.getElementById("previewBox");box.innerHTML=`<iframe id="appFrame"></iframe>`;let f=document.getElementById("appFrame");let doc=f.contentDocument||f.contentWindow.document;doc.open();doc.write(code);doc.close();}
-function getFallback(name,idea){return `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${name}</title><script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"><\/script><style>body{margin:0;background:#000;color:#fff;font-family:sans-serif;overflow:hidden}#ui{position:fixed;top:10px;right:10px;left:10px;display:flex;justify-content:space-between;z-index:10}#score{font-size:22px;font-weight:bold;color:#facc15}.ctrl{position:fixed;bottom:15px;display:flex;gap:10px;justify-content:center;width:100%;z-index:10}button{padding:15px 20px;border-radius:15px;border:none;background:#a855f7;color:#fff;font-size:18px}</style></head><body><div id="ui"><div>👑 ${name}</div><div id="score">النقاط: 0</div></div><div style="position:fixed;top:50px;text-align:center;width:100%;color:#aaa;font-size:13px">${idea}</div><div class="ctrl" dir="ltr"><button onclick="move(-1)">◀</button><button onclick="jump()">⬆ نط</button><button onclick="move(1)">▶</button></div><script>let scene=new THREE.Scene();scene.background=new THREE.Color(0x050008);let cam=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,0.1,100);cam.position.set(0,4,7);let ren=new THREE.WebGLRenderer();ren.setSize(innerWidth,innerHeight);ren.shadowMap.enabled=true;document.body.appendChild(ren.domElement);let light=new THREE.DirectionalLight(0xffffff,1.2);light.position.set(5,10,5);light.castShadow=true;scene.add(light);scene.add(new THREE.AmbientLight(0xa855f7,0.6));let ground=new THREE.Mesh(new THREE.PlaneGeometry(10,100),new THREE.MeshStandardMaterial({color:0x111111}));ground.rotation.x=-Math.PI/2;ground.position.z=-40;ground.receiveShadow=true;scene.add(ground);let ball=new THREE.Mesh(new THREE.SphereGeometry(0.6,32,32),new THREE.MeshStandardMaterial({color:0xa855f7,emissive:0x3b0764}));ball.position.set(0,0.6,0);ball.castShadow=true;scene.add(ball);let stars=[];for(let i=0;i<15;i++){let s=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.5,0.5),new THREE.MeshStandardMaterial({color:0xfacc15,emissive:0x854d0e}));s.position.set((Math.random()*4-2),0.7,-i*6-5);stars.push(s);scene.add(s);}let score=0,vy=0,jumping=false;function move(d){ball.position.x=Math.max(-3,Math.min(3,ball.position.x+d));}function jump(){if(!jumping){vy=0.22;jumping=true;}}function loop(){requestAnimationFrame(loop);ball.position.z-=0.08;cam.position.z=ball.position.z+7;cam.position.x=ball.position.x;cam.lookAt(ball.position.x,0,ball.position.z-5);if(jumping){ball.position.y+=vy;vy-=0.015;if(ball.position.y<=0.6){ball.position.y=0.6;jumping=false;}}stars.forEach(s=>{s.rotation.y+=0.05;if(Math.abs(s.position.z-ball.position.z)<0.6&&Math.abs(s.position.x-ball.position.x)<0.7){score+=10;document.getElementById('score').innerText='النقاط: '+score;s.position.z-=90;s.position.x=Math.random()*4-2;}});ren.render(scene,cam);}loop();<\/script></body></html>`;}
 function saveApp(){if(!lastCode){alert("ابني الأول");return;}let name=document.getElementById("appName").value||"NOVA APP";let apps=JSON.parse(localStorage.getItem("nova_apps")||"[]");apps.unshift({name:name,code:lastCode,date:new Date().toLocaleDateString("ar-EG")});localStorage.setItem("nova_apps",JSON.stringify(apps));alert("✅ اتحفظ في تطبيقاتي");}
 function downloadApp(){if(!lastCode){alert("ابني الأول");return;}let blob=new Blob([lastCode],{type:"text/html"});let a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="nova-app.html";a.click();}
 </script>
