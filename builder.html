@@ -32,7 +32,7 @@ iframe{width:100%;height:420px;border:none;background:#fff}.tag{display:inline-b
 <input type="password" id="apiKey" placeholder="الصق مفتاح Groq هنا - gsk_...">
 <p id="keyStatus" style="font-size:12px;color:#facc15;margin:0"></p>
 <label>💡 عايز تبني إيه؟</label>
-<textarea id="idea" rows="3" placeholder="مثال: تطبيق بيعرف عدد دقات القلب عن طريق البصمة"></textarea>
+<textarea id="idea" rows="3" placeholder="مثال: لعبة ثعبان بياكل تفاح"></textarea>
 <label>نوع البناء:</label>
 <div class="btns">
 <button class="btn b2 active" id="b2d" onclick="setType('2D')">🎮 2D - تطبيقات وألعاب عادية</button>
@@ -61,21 +61,24 @@ async function buildApp(){
 let idea=document.getElementById("idea").value.trim(),name=document.getElementById("appName").value||"NOVA APP",style=document.getElementById("style").value,key=document.getElementById("apiKey").value.trim();
 if(!idea){alert("اكتب فكرة الأول");return;}
 if(!key){alert("حط مفتاح Groq الأول من console.groq.com");return;}
+if(!key.startsWith("gsk_")){alert("ده مش مفتاح Groq! مفتاح Groq لازم يبدأ بـ gsk_ - هاته من console.groq.com");return;}
 localStorage.setItem("nova_groq",key);
 document.getElementById("status").innerText="⏳ بيبني بالـ AI... استنى 10 ثواني";
 let prompt=`ابني تطبيق واحد كامل في ملف HTML واحد. اسم التطبيق: ${name}. الفكرة: ${idea}. النوع: ${TYPE}. الستايل: ${style}. شروط مهمة جدا: ملف HTML واحد فقط، عربي RTL، يشتغل على الموبايل، أزرار كبيرة. مهم: أزرار التحكم لازم تكون داخل div فيه dir="ltr" عشان متتقلبش، وزرار اليمين ▶ لازم يحرك يمين، وزرار الشمال ◀ لازم يحرك شمال. لو طلب تطبيق مش لعبة، ابن التطبيق كامل بوظائفه الحقيقية، مش لعبة. لو 3D: استخدم Three.js من CDN، إضاءة + ظلال، أرضية، كاميرا، أزرار موبايل. لو 2D: تطبيق أو لعبة كاملة. رجع الكود فقط، من غير شرح، من غير \`\`\`.`;
+let models=["openai/gpt-oss-120b","llama-3.1-8b-instant"];
+for(let model of models){
 try{
-let res=await fetch("https://api.groq.com/openai/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},body:JSON.stringify({model:"llama-3.3-70b-versatile",messages:[{role:"user",content:prompt}],temperature:0.7,max_tokens:8000})});
+let res=await fetch("https://api.groq.com/openai/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},body:JSON.stringify({model:model,messages:[{role:"user",content:prompt}],temperature:0.7,max_tokens:8000})});
 let data=await res.json();
-if(!data.choices) throw new Error("API failed: "+JSON.stringify(data).slice(0,200));
+if(!data.choices) continue;
 let txt=data.choices[0].message.content.replace(/```html/g,"").replace(/```/g,"").trim();
 showApp(txt);
 document.getElementById("status").innerText="✅ اتبنت بالـ AI!";
-}catch(e){
-document.getElementById("status").innerText="❌ الـ AI مردش - المفتاح غلط. اتأكد إنك نسخت مفتاح Groq كله من console.groq.com";
-alert("المفتاح غلط. هات مفتاح جديد من console.groq.com");
 return;
+}catch(e){continue;}
 }
+document.getElementById("status").innerText="❌ الـ AI مردش - المفتاح غلط. امسح المفتاح وهات واحد جديد من console.groq.com";
+alert("المفتاح غلط. امسحه وهات مفتاح جديد من console.groq.com - لازم يبدأ بـ gsk_");
 }
 function showApp(code){lastCode=code;let box=document.getElementById("previewBox");box.innerHTML=`<iframe id="appFrame"></iframe>`;let f=document.getElementById("appFrame");let doc=f.contentDocument||f.contentWindow.document;doc.open();doc.write(code);doc.close();}
 function saveApp(){if(!lastCode){alert("ابني الأول");return;}let name=document.getElementById("appName").value||"NOVA APP";let apps=JSON.parse(localStorage.getItem("nova_apps")||"[]");apps.unshift({name:name,code:lastCode,date:new Date().toLocaleDateString("ar-EG")});localStorage.setItem("nova_apps",JSON.stringify(apps));alert("✅ اتحفظ في تطبيقاتي");}
